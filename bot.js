@@ -66,6 +66,14 @@ const addMessage = (threadId, content) => {
 // This event will run every time a message is received
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.content || message.content === '') return; //Ignore bot messages
+    
+    // Only respond if the bot is mentioned in the message
+    if (!message.mentions.has(client.user)) return;
+    
+    // Remove bot mention from message content before processing
+    const cleanContent = message.content.replace(/<@!?\d+>/g, '').trim();
+    if (!cleanContent) return; // Don't respond to empty messages after removing mentions
+    
     // console.log(message);
     const discordThreadId = message.channel.id;
     let openAiThreadId = getOpenAiThreadId(discordThreadId);
@@ -81,10 +89,10 @@ client.on('messageCreate', async message => {
             const otherMessagesRaw = await message.channel.messages.fetch();
 
             const otherMessages = Array.from(otherMessagesRaw.values())
-                .map(msg => msg.content)
+                .map(msg => msg.content.replace(/<@!?\d+>/g, '').trim())
                 .reverse(); //oldest first
 
-            const messages = [starterMsg.content, ...otherMessages]
+            const messages = [starterMsg.content.replace(/<@!?\d+>/g, '').trim(), ...otherMessages]
                 .filter(msg => !!msg && msg !== '')
 
             // console.log(messages);
@@ -95,7 +103,7 @@ client.on('messageCreate', async message => {
 
     // console.log(openAiThreadId);
     if(!messagesLoaded){ //If this is for a thread, assume msg was loaded via .fetch() earlier
-        await addMessage(openAiThreadId, message.content);
+        await addMessage(openAiThreadId, cleanContent);
     }
 
     const run = await openai.beta.threads.runs.create(
