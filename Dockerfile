@@ -6,7 +6,6 @@ WORKDIR /usr/src/app
 
 # Copy the package.json and package-lock.json files
 COPY package*.json ./
-COPY .env ./
 # Install only production dependencies and build the app (if necessary)
 RUN npm install --only=production
 
