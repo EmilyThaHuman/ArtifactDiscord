@@ -65,10 +65,28 @@ const addMessage = (threadId, content) => {
 
 // This event will run every time a message is received
 client.on('messageCreate', async message => {
-    if (message.author.bot || !message.content || message.content === '') return; //Ignore bot messages
+    try {
+        if (message.author.bot || !message.content || message.content === '') return; //Ignore bot messages
+        
+        // Debug logging
+        console.log('Message received:', message.content);
+        console.log('Bot mentioned:', message.mentions.has(client.user));
+        console.log('Mentions:', message.mentions.users.map(user => user.username));
     
     // Only respond if the bot is mentioned in the message
-    if (!message.mentions.has(client.user)) return;
+    if (!message.mentions.has(client.user)) {
+        console.log('Bot not mentioned, ignoring message');
+        return;
+    }
+    
+    // Double check - ensure the bot is actually mentioned
+    const botMentioned = message.mentions.users.has(client.user.id);
+    if (!botMentioned) {
+        console.log('Bot not in mentions list, ignoring message');
+        return;
+    }
+    
+    console.log('Bot mentioned, processing message');
     
     // Remove bot mention from message content before processing
     const cleanContent = message.content.replace(/<@!?\d+>/g, '').trim();
@@ -119,6 +137,10 @@ client.on('messageCreate', async message => {
     console.log(response);
     
     message.reply(response);
+    } catch (error) {
+        console.error('Error processing message:', error);
+        message.reply('Sorry, I encountered an error processing your message.');
+    }
 });
 
 // Authenticate Discord
